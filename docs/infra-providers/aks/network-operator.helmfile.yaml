@@ -1,0 +1,14 @@
+repositories:
+  - name: nvidia
+    url: https://helm.ngc.nvidia.com/nvidia
+
+releases:
+  - name: network-operator
+    namespace: network-operator
+    chart: nvidia/network-operator
+    disableValidationOnInstall: true
+    hooks:
+      - events: ["postsync"]
+        command: kubectl
+        args: ["apply", "-f", "nic-cluster-policy.yaml"]
+        showlogs: true

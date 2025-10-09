@@ -1,0 +1,8 @@
+repositories:
+  - name: nvidia
+    url: https://helm.ngc.nvidia.com/nvidia
+
+releases:
+  - name: nvidia-device-plugin
+    namespace: kube-system
+    chart: nvidia/nvidia-device-plugin
