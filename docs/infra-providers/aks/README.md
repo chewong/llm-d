@@ -8,7 +8,7 @@ Before proceeding with this guide, ensure you have completed the following requi
 
 - [client setup prerequisites](../../../guides/prereq/client-setup/README.md)
 - The latest [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) with aks-preview extension installed (`az extension add --upgrade --name aks-preview`)
-- [node-shell plugin](https://github.com/kvaps/kubectl-node-shell)
+- `ClusterAdmin` RBAC role assigned to your user account for the target AKS cluster
 - An AKS cluster. If you need to create one, refer to the [AKS quickstart guide](https://learn.microsoft.com/en-us/azure/aks/learn/quick-kubernetes-deploy-cli)
 - Sufficient quota allocated for GPU VM instances in your Azure subscription
 
@@ -23,6 +23,7 @@ The following table outlines the recommended Azure GPU VM sizes optimized for hi
 | A100      | [Standard_ND96amsr_A100_v4](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ndma100v4-series?tabs=sizebasic) | 8         | 80 GB          | 640 GB           | ✅                            | [Intelligent Inference Scheduling](../../../guides/inference-scheduling/README.md)<br>[Precise Prefix Cache Aware Routing](../../../guides/precise-prefix-cache-aware/README.md)                                                                                                                                                                                  |
 | H100      | [Standard_ND96isr_H100_v5](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ndh100v5-series?tabs=sizebasic)   | 8         | 80 GB          | 640 GB           | ✅                            | [Intelligent Inference Scheduling](../../../guides/inference-scheduling/README.md)<br>[Precise Prefix Cache Aware Routing](../../../guides/precise-prefix-cache-aware/README.md)<br>[P/D Disaggregation](../../../guides/pd-disaggregation/README.md) (with vLLM flag `--max-model-len=4500`)                                                                     |
 | H200      | [Standard_ND96isr_H200_v5](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nd-h200-v5-series?tabs=sizebasic) | 8         | 141 GB         | 1128 GB          | ✅                            | [Intelligent Inference Scheduling](../../../guides/inference-scheduling/README.md)<br>[Precise Prefix Cache Aware Routing](../../../guides/precise-prefix-cache-aware/README.md) <br>[P/D Disaggregation](../../../guides/pd-disaggregation/README.md), [Wide Expert Parallelism (EP/DP) with LeaderWorkerSet](../../../guides/wide-ep-lws/README.md) |
+
 ## Cluster Configuration
 
 GPUDirect RDMA is essential for achieving optimal performance with advanced deployment patterns such as [P/D Disaggregation](../../../guides/pd-disaggregation/README.md) and [Wide Expert Parallelism](../../../guides/wide-ep-lws/README.md). To enable GPUDirect RDMA, you must create and configure a GPU node pool with the appropriate VM size and install the required drivers.
@@ -125,13 +126,13 @@ NRI must be explicitly enabled in the containerd configuration. The required con
 
 To apply this configuration:
 
-1. Access each GPU node using the `kubectl node-shell` plugin:
+1. Access each GPU node using `kubectl debug`:
 
 ```bash
-kubectl node-shell <gpu-node-name>
+kubectl debug node/<gpu-node-name> -it --image=ubuntu --profile=sysadmin -- chroot /host
 ```
 
-2. Within the node shell, edit the containerd configuration file:
+2. Within the debug pod, edit the containerd configuration file:
 
 ```bash
 vim /etc/containerd/config.toml
@@ -145,7 +146,13 @@ vim /etc/containerd/config.toml
 systemctl restart containerd
 ```
 
-5. Repeat these steps for each GPU node in your cluster.
+5. Exit the debug pod:
+
+```bash
+exit
+```
+
+6. Repeat these steps for each GPU node in your cluster.
 
 #### Deploying the ulimit Adjuster Plugin
 
@@ -174,3 +181,7 @@ Capacity:
 ```
 
 > **Note:** The `nvidia.com/gpu` resource represents the number of physical GPUs available on the node, while `rdma/ib` indicates the maximum number of pods that can concurrently utilize RDMA over InfiniBand. As a best practice, each pod should request exactly one `rdma/ib` resource, independent of the number of GPUs it consumes.
+
+## Point of Contact
+
+- [Ernest Wong](https://github.com/chewong)

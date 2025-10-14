@@ -6,6 +6,7 @@ releases:
   - name: gpu-operator
     namespace: gpu-operator
     chart: nvidia/gpu-operator
+    version: v25.3.4
     disableValidationOnInstall: true
     values:
       - nfd:

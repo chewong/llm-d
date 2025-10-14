@@ -6,6 +6,7 @@ releases:
   - name: network-operator
     namespace: network-operator
     chart: nvidia/network-operator
+    version: v25.7.0
     disableValidationOnInstall: true
     hooks:
       - events: ["postsync"]
